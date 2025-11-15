@@ -1,33 +1,12 @@
 import React from "react";
 
-function Chat({ username, inputMessage, setInputMessage, onSendMessage }) {
-  const [messages, setMessages] = React.useState([
-    {
-      role: "chat",
-      sender: "Rahul",
-      content: "Hello, how are you?",
-    },
-    {
-      role: "chat",
-      sender: "Guest",
-      content: "Hello, how are you?",
-    },
-    {
-      role: "notification",
-      content: "Rahul has joined the chat.",
-    },
-    {
-      role: "chat",
-      sender: "Guest",
-      content: "Hello, how are you?",
-    },
-    {
-      role: "chat",
-      sender: "Alice",
-      content: "Hello, how are you?",
-    },
-  ]);
-
+function Chat({
+  username,
+  inputMessage,
+  setInputMessage,
+  onSendMessage,
+  messages,
+}) {
   return (
     <div className="h-full w-220 max-w-full bg-zinc-200 flex flex-col rounded-md shadow-md">
       <div className="p-4 border-b border-zinc-300 flex items-center justify-between">

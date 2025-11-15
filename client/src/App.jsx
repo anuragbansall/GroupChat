@@ -1,30 +1,100 @@
 import React, { useState } from "react";
 import JoinRoom from "./components/JoinRoom";
 import Chat from "./components/Chat";
+import { useEffect } from "react";
+import { io } from "socket.io-client";
+import { useRef } from "react";
 
 function App() {
   const [username, setUsername] = useState("");
   const [joinRoomLoading, setJoinRoomLoading] = useState(false);
   const [joinRoomError, setJoinRoomError] = useState("");
   const [isJoined, setIsJoined] = useState(false);
-
   const [inputMessage, setInputMessage] = useState("");
+  const socket = useRef(null);
+  const [messages, setMessages] = React.useState([
+    {
+      role: "chat",
+      sender: "Rahul",
+      content: "Hello, how are you?",
+    },
+    {
+      role: "chat",
+      sender: "Guest",
+      content: "Hello, how are you?",
+    },
+    {
+      role: "notification",
+      content: "Rahul has joined the chat.",
+    },
+    {
+      role: "chat",
+      sender: "Guest",
+      content: "Hello, how are you?",
+    },
+    {
+      role: "chat",
+      sender: "Alice",
+      content: "Hello, how are you?",
+    },
+  ]);
+
+  useEffect(() => {
+    socket.current = io("http://localhost:5000");
+
+    socket.current.on("connect", () => {
+      console.log("Connected to server with ID:", socket.current.id);
+
+      socket.current.on("user_joined", (username) => {
+        console.log(`User joined: ${username}`);
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            role: "notification",
+            content: `${username} has joined the chat.`,
+          },
+        ]);
+      });
+
+      socket.current.on("receive_message", (messageData) => {
+        setMessages((prevMessages) => [...prevMessages, messageData]);
+      });
+    });
+
+    return () => {
+      socket.current.disconnect();
+    };
+  }, []);
 
   const handleJoinRoom = () => {
     setJoinRoomError("");
+    setJoinRoomLoading(true);
 
     if (!username) {
       setJoinRoomError("Username is required");
+      setJoinRoomLoading(false);
       return;
     }
-    // Logic to join the room can be added here
-    console.log(`User ${username} is trying to join the room.`);
+
+    try {
+      socket.current.emit("join_room", username);
+      setIsJoined(true);
+    } catch (error) {
+      setJoinRoomError("Failed to join the room");
+    } finally {
+      setJoinRoomLoading(false);
+    }
   };
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    // Logic to send the message can be added here
-    console.log(`User ${username} sent message: ${inputMessage}`);
+    if (!inputMessage) return;
+
+    socket.current.emit("send_message", {
+      role: "chat",
+      sender: username,
+      content: inputMessage,
+    });
     setInputMessage("");
   };
 
@@ -46,6 +116,7 @@ function App() {
           inputMessage={inputMessage}
           setInputMessage={setInputMessage}
           onSendMessage={handleSendMessage}
+          messages={messages}
         />
       )}
     </div>
