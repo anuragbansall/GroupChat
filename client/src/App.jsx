@@ -12,32 +12,15 @@ function App() {
   const [isJoined, setIsJoined] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
   const socket = useRef(null);
-  const [messages, setMessages] = React.useState([
-    {
-      role: "chat",
-      sender: "Rahul",
-      content: "Hello, how are you?",
-    },
-    {
-      role: "chat",
-      sender: "Guest",
-      content: "Hello, how are you?",
-    },
-    {
-      role: "notification",
-      content: "Rahul has joined the chat.",
-    },
-    {
-      role: "chat",
-      sender: "Guest",
-      content: "Hello, how are you?",
-    },
-    {
-      role: "chat",
-      sender: "Alice",
-      content: "Hello, how are you?",
-    },
-  ]);
+  const [messages, setMessages] = React.useState([]);
+  const typingTimeoutRef = useRef(null);
+  const [usersTyping, setUsersTyping] = useState([]);
+  const inputRef = useRef(null);
+
+  // Focus input on join
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, [isJoined]);
 
   useEffect(() => {
     socket.current = io("http://localhost:5000");
@@ -59,6 +42,19 @@ function App() {
       socket.current.on("receive_message", (messageData) => {
         setMessages((prevMessages) => [...prevMessages, messageData]);
       });
+
+      socket.current.on("user_typing", (username) => {
+        setUsersTyping((prev) => {
+          if (!prev.includes(username)) {
+            return [...prev, username];
+          }
+          return prev;
+        });
+      });
+
+      socket.current.on("user_stop_typing", (username) => {
+        setUsersTyping((prev) => prev.filter((user) => user !== username));
+      });
     });
 
     return () => {
@@ -66,7 +62,8 @@ function App() {
     };
   }, []);
 
-  const handleJoinRoom = () => {
+  const handleJoinRoom = (e) => {
+    e.preventDefault();
     setJoinRoomError("");
     setJoinRoomLoading(true);
 
@@ -98,8 +95,21 @@ function App() {
     setInputMessage("");
   };
 
+  const handleTyping = (e) => {
+    socket.current.emit("typing", { username });
+    setInputMessage(e.target.value);
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.current.emit("stop_typing", { username });
+    }, 1000);
+  };
+
   return (
-    <div className="bg-zinc-300 h-screen flex items-center justify-center">
+    <div className="bg-zinc-200 h-screen flex items-center justify-center">
       {!isJoined && (
         <JoinRoom
           username={username}
@@ -107,6 +117,7 @@ function App() {
           onJoinRoom={handleJoinRoom}
           joinRoomLoading={joinRoomLoading}
           joinRoomError={joinRoomError}
+          inputRef={inputRef}
         />
       )}
 
@@ -117,6 +128,9 @@ function App() {
           setInputMessage={setInputMessage}
           onSendMessage={handleSendMessage}
           messages={messages}
+          onTyping={handleTyping}
+          usersTyping={usersTyping}
+          inputRef={inputRef}
         />
       )}
     </div>

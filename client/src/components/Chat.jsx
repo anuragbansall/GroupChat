@@ -6,15 +6,26 @@ function Chat({
   setInputMessage,
   onSendMessage,
   messages,
+  onTyping,
+  usersTyping,
+  inputRef,
 }) {
   return (
-    <div className="h-full w-220 max-w-full bg-zinc-200 flex flex-col rounded-md shadow-md">
-      <div className="p-4 border-b border-zinc-300 flex items-center justify-between">
-        <h2 className="text-2xl">Chat Room</h2>
+    <div className="h-full w-220 max-w-full bg-zinc-100 flex flex-col rounded-md shadow-md">
+      <div className="p-4 border-b border-zinc-300">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl">Chat Room</h2>
 
-        <p className="text-zinc-600">
-          Username: <strong>{username} </strong>
-        </p>
+          <p className="text-zinc-600">
+            Username: <strong>{username} </strong>
+          </p>
+        </div>
+        {usersTyping.length > 0 && (
+          <p className="text-zinc-600 italic text-sm">
+            {usersTyping.join(", ")} {usersTyping.length === 1 ? "is" : "are"}{" "}
+            typing...
+          </p>
+        )}
       </div>
 
       <div className="flex-1 p-4 overflow-y-auto space-y-4 flex flex-col">
@@ -23,7 +34,7 @@ function Chat({
             return (
               <div
                 key={index}
-                className="text-center text-zinc-500 italic text-sm bg-zinc-100 p-2 rounded-md self-center"
+                className="text-center text-zinc-500 italic text-sm bg-zinc-200 p-2 rounded-md self-center"
               >
                 {msg.content}
               </div>
@@ -32,13 +43,13 @@ function Chat({
           return (
             <div
               key={index}
-              className={`p-2 rounded-md ${
+              className={`p-2 rounded-md max-w-xs whitespace-normal wrap-break-word break-all ${
                 msg.sender === username
                   ? "bg-sky-500 text-white self-end"
                   : "bg-white self-start"
               }`}
             >
-              <strong>{msg.sender}: </strong>
+              <strong>{msg.sender === username ? "You" : msg.sender}: </strong>
               {msg.content}
             </div>
           );
@@ -54,7 +65,8 @@ function Chat({
           placeholder="Type your message..."
           className="flex-1 border border-zinc-300 p-2 rounded"
           value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
+          onChange={onTyping}
+          ref={inputRef}
         />
         <button
           type="submit"

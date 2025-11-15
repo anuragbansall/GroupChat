@@ -27,6 +27,14 @@ io.on("connection", (socket) => {
     io.to(ROOM_ID).emit("receive_message", messageData);
   });
 
+  socket.on("typing", ({ username }) => {
+    socket.to(ROOM_ID).emit("user_typing", username);
+  });
+
+  socket.on("stop_typing", ({ username }) => {
+    socket.to(ROOM_ID).emit("user_stop_typing", username);
+  });
+
   socket.on("disconnect", () => {
     console.log("A user disconnected:", socket.id);
   });
